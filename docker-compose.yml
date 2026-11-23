@@ -3,7 +3,6 @@ services:
   db:
     image: postgres:16-alpine
     container_name: clientorahq-db
-
     restart: unless-stopped
 
     env_file:
@@ -25,6 +24,35 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: clientorahq-app
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   postgres_data:
